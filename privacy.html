@@ -10,6 +10,7 @@
     />
     <meta name="robots" content="noindex, follow" />
     <meta name="theme-color" content="#f5f3ee" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="canonical" href="https://astra-house.wuaze.com/privacy.html" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -70,9 +71,9 @@
 
         <h2>4. Передача данных</h2>
         <p>
-          После отправки формы сайт формирует текст заявки и открывает Telegram с подготовленным
-          сообщением на аккаунт <a href="https://t.me/garunsuleymanov">garunsuleymanov</a>. Backend,
-          CRM и серверное хранение заявок на сайте не используются.
+          После отправки формы сайт передает заявку на серверный endpoint, который отправляет
+          сообщение в Telegram-бота ответственному специалисту. Пользователь остается на сайте,
+          а токен бота и идентификатор чата не хранятся во frontend-коде.
         </p>
 
         <h2>5. Аналитика, пиксели и cookies</h2>

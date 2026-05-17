@@ -15,7 +15,6 @@ const quizState = {
   source: "site",
   currentStep: 0,
   answers: {},
-  lastMessage: "",
   selectedProject: "",
 };
 
@@ -483,11 +482,6 @@ function setupActions() {
       return;
     }
 
-    if (action === "open-telegram") {
-      event.preventDefault();
-      const source = actionTarget.dataset.ctaSource || "direct";
-      openTelegram(buildDirectMessage(source));
-    }
   });
 
   document.addEventListener("keydown", (event) => {
@@ -539,7 +533,7 @@ function setupLeadForm() {
   const form = document.getElementById("lead-form");
   const status = document.getElementById("lead-form-status");
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const data = new FormData(form);
@@ -560,22 +554,82 @@ function setupLeadForm() {
       return;
     }
 
-    const message = buildLeadMessage({
-      source: "Финальная форма",
-      name,
-      phone,
-      areaBudget,
+    await submitLeadRequest({
+      form,
+      status,
+      payload: buildLeadPayload(data, {
+        source: "Финальная форма",
+        name,
+        phone,
+        areaBudget,
+      }),
+      successMessage: "Заявка отправлена. Мы скоро свяжемся с вами.",
+      errorMessage: "Не удалось отправить заявку. Попробуйте еще раз.",
     });
-
-    openTelegram(message);
-    setStatus(status, "Открываем Telegram с подготовленной заявкой.", false);
-    form.reset();
   });
+}
+
+function buildLeadPayload(data, extra = {}) {
+  const fields = Object.fromEntries(
+    Array.from(data.entries())
+      .filter(([name]) => name !== "privacyConsent")
+      .map(([name, value]) => [name, String(value || "").trim()]),
+  );
+
+  return {
+    ...fields,
+    ...extra,
+    page: window.location.href,
+  };
+}
+
+async function submitLeadRequest({ form, status, payload, successMessage, errorMessage, onSuccess }) {
+  const submitButton = form.querySelector('[type="submit"]');
+  const initialButtonText = submitButton ? submitButton.textContent : "";
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Отправляем...";
+  }
+  setStatus(status, "Отправляем заявку...", false);
+
+  try {
+    const response = await fetch("/api/lead", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || errorMessage);
+    }
+
+    setStatus(status, successMessage, false);
+    form.reset();
+    if (typeof onSuccess === "function") {
+      onSuccess();
+    }
+  } catch (error) {
+    setStatus(status, error.message || errorMessage, true);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = initialButtonText;
+    }
+  }
 }
 
 function setStatus(node, text, isError) {
   node.textContent = text;
   node.classList.toggle("is-error", Boolean(isError));
+}
+
+function isValidPhone(value) {
+  const digits = String(value).replace(/\D/g, "");
+  return digits.length >= 10;
 }
 
 function setupMobileNav() {
@@ -696,7 +750,6 @@ function openQuiz(source, selectedProject = "") {
   quizState.source = source;
   quizState.currentStep = 0;
   quizState.answers = {};
-  quizState.lastMessage = "";
   quizState.selectedProject = selectedProject;
 
   const modal = document.getElementById("quiz-modal");
@@ -831,7 +884,7 @@ function updateQuizProgress() {
   progressBar.style.width = `${(current / total) * 100}%`;
 }
 
-function submitQuizLead(event) {
+async function submitQuizLead(event) {
   event.preventDefault();
 
   const form = event.currentTarget;
@@ -854,9 +907,21 @@ function submitQuizLead(event) {
   }
 
   quizState.answers.contact = { name, phone };
-  quizState.lastMessage = buildQuizMessage();
-  openTelegram(quizState.lastMessage);
-  renderQuizSuccess();
+
+  await submitLeadRequest({
+    form,
+    status,
+    payload: buildLeadPayload(data, {
+      source: `Квиз (${quizState.source})`,
+      name,
+      phone,
+      selectedProject: quizState.selectedProject,
+      quizAnswers: { ...quizState.answers },
+    }),
+    successMessage: "Заявка отправлена. Мы скоро свяжемся с вами.",
+    errorMessage: "Не удалось отправить заявку. Попробуйте еще раз.",
+    onSuccess: renderQuizSuccess,
+  });
 }
 
 function renderQuizSuccess() {
@@ -874,69 +939,13 @@ function renderQuizSuccess() {
     <ul class="quiz__success-list">
       ${SITE_CONFIG.quiz.successItems.map((item) => `<li>${item}</li>`).join("")}
     </ul>
-    <p class="quiz__support">${SITE_CONFIG.quiz.autoOpenLabel}</p>
   `;
 
   footer.innerHTML = `
     <button class="button button--ghost" type="button" id="quiz-close-success">Закрыть</button>
-    <button class="button button--solid" type="button" id="quiz-open-telegram">${SITE_CONFIG.cta.quizFallback}</button>
   `;
 
   document.getElementById("quiz-close-success").addEventListener("click", closeQuiz);
-  document.getElementById("quiz-open-telegram").addEventListener("click", () => {
-    openTelegram(quizState.lastMessage || buildDirectMessage("quiz-success"));
-  });
-}
-
-function buildDirectMessage(source) {
-  return [
-    "Здравствуйте! Хочу обсудить строительство дома в Астрахани.",
-    `Источник: ${source}.`,
-  ].join("\n");
-}
-
-function buildLeadMessage({ source, name, phone, areaBudget }) {
-  const lines = [
-    "Здравствуйте! Хочу получить расчет дома в Астрахани.",
-    `Источник: ${source}.`,
-    name ? `Имя: ${name}` : "Имя: не указано",
-    `Телефон: ${phone}`,
-    areaBudget ? `Площадь / бюджет: ${areaBudget}` : "Площадь / бюджет: пока без уточнения",
-  ];
-
-  return lines.join("\n");
-}
-
-function buildQuizMessage() {
-  const answerLines = QUIZ_STEPS.filter((step) => step.type === "choice")
-    .map((step) => `${step.label}: ${quizState.answers[step.id] || "не указано"}`);
-  const contact = quizState.answers.contact || {};
-
-  return [
-    "Здравствуйте! Хочу получить расчет и подбор проекта дома в Астрахани.",
-    `Источник: квиз (${quizState.source}).`,
-    quizState.selectedProject ? `Выбранный проект: ${quizState.selectedProject}` : "",
-    "",
-    "Параметры запроса:",
-    ...answerLines,
-    "",
-    contact.name ? `Имя: ${contact.name}` : "Имя: не указано",
-    `Телефон: ${contact.phone || "не указан"}`,
-  ].join("\n");
-}
-
-function isValidPhone(value) {
-  const digits = String(value).replace(/\D/g, "");
-  return digits.length >= 10;
-}
-
-function openTelegram(message) {
-  const base = SITE_CONFIG.contacts.telegramUsername
-    ? `https://t.me/${SITE_CONFIG.contacts.telegramUsername}`
-    : SITE_CONFIG.contacts.telegramUrl;
-  const separator = base.includes("?") ? "&" : "?";
-  const url = message ? `${base}${separator}text=${encodeURIComponent(message)}` : base;
-  window.open(url, "_blank", "noopener");
 }
 
 function setupReveal() {
