@@ -482,6 +482,10 @@ function setupActions() {
       return;
     }
 
+    if (action === "close-lead-success") {
+      event.preventDefault();
+      closeLeadSuccessModal();
+    }
   });
 
   document.addEventListener("keydown", (event) => {
@@ -491,6 +495,12 @@ function setupActions() {
 
     const quizModal = document.getElementById("quiz-modal");
     const projectModal = document.getElementById("project-modal");
+    const leadSuccessModal = document.getElementById("lead-success-modal");
+
+    if (leadSuccessModal && !leadSuccessModal.hidden) {
+      closeLeadSuccessModal();
+      return;
+    }
 
     if (quizModal && !quizModal.hidden) {
       closeQuiz();
@@ -609,6 +619,7 @@ async function submitLeadRequest({ form, status, payload, successMessage, errorM
 
     setStatus(status, successMessage, false);
     form.reset();
+    openLeadSuccessModal();
     if (typeof onSuccess === "function") {
       onSuccess();
     }
@@ -630,6 +641,31 @@ function setStatus(node, text, isError) {
 function isValidPhone(value) {
   const digits = String(value).replace(/\D/g, "");
   return digits.length >= 10;
+}
+
+function openLeadSuccessModal() {
+  const modal = document.getElementById("lead-success-modal");
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = false;
+  updateBodyLock();
+
+  const closeButton = document.getElementById("lead-success-close");
+  if (closeButton) {
+    closeButton.focus();
+  }
+}
+
+function closeLeadSuccessModal() {
+  const modal = document.getElementById("lead-success-modal");
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = true;
+  updateBodyLock();
 }
 
 function setupMobileNav() {
@@ -777,7 +813,7 @@ function renderQuizStep() {
   updateQuizProgress();
 
   if (!step) {
-    renderQuizSuccess();
+    closeQuiz();
     return;
   }
 
@@ -920,32 +956,8 @@ async function submitQuizLead(event) {
     }),
     successMessage: "Заявка отправлена. Мы скоро свяжемся с вами.",
     errorMessage: "Не удалось отправить заявку. Попробуйте еще раз.",
-    onSuccess: renderQuizSuccess,
+    onSuccess: closeQuiz,
   });
-}
-
-function renderQuizSuccess() {
-  const content = document.getElementById("quiz-content");
-  const footer = document.getElementById("quiz-footer");
-  const counter = document.getElementById("quiz-counter");
-  const progressBar = document.getElementById("quiz-progress-bar");
-
-  counter.textContent = "Готово";
-  progressBar.style.width = "100%";
-
-  content.innerHTML = `
-    <h3 id="quiz-title">${SITE_CONFIG.quiz.successTitle}</h3>
-    <p>${SITE_CONFIG.quiz.successLead}</p>
-    <ul class="quiz__success-list">
-      ${SITE_CONFIG.quiz.successItems.map((item) => `<li>${item}</li>`).join("")}
-    </ul>
-  `;
-
-  footer.innerHTML = `
-    <button class="button button--ghost" type="button" id="quiz-close-success">Закрыть</button>
-  `;
-
-  document.getElementById("quiz-close-success").addEventListener("click", closeQuiz);
 }
 
 function setupReveal() {

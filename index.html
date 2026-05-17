@@ -456,6 +456,26 @@
       </div>
     </div>
 
+    <div class="modal" id="lead-success-modal" hidden>
+      <div class="modal__backdrop" data-action="close-lead-success"></div>
+      <div class="modal__dialog modal__dialog--success" role="dialog" aria-modal="true" aria-labelledby="lead-success-title">
+        <button class="modal__close" type="button" data-action="close-lead-success" aria-label="Закрыть сообщение">
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="lead-success">
+          <span class="lead-success__mark" aria-hidden="true"></span>
+          <p class="eyebrow">Готово</p>
+          <h2 id="lead-success-title">Заявка отправлена</h2>
+          <p>Спасибо! Мы получили вашу заявку и скоро свяжемся с вами по указанному телефону.</p>
+          <button class="button button--solid" type="button" data-action="close-lead-success" id="lead-success-close">
+            Хорошо
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script type="application/ld+json" id="faq-schema"></script>
   </body>
 </html>

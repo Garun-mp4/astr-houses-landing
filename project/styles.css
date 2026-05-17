@@ -1009,6 +1009,10 @@ input:focus-visible {
 	width: min(1060px, 100%);
 }
 
+.modal__dialog--success {
+	width: min(520px, 100%);
+}
+
 .modal__close {
 	position: absolute;
 	top: 18px;
@@ -1037,6 +1041,59 @@ input:focus-visible {
 
 .modal__close span:last-child {
 	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.lead-success {
+	display: grid;
+	justify-items: center;
+	gap: 16px;
+	padding: 16px 10px 6px;
+	text-align: center;
+}
+
+.lead-success__mark {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 64px;
+	height: 64px;
+	border-radius: 50%;
+	background: var(--sage-soft);
+	border: 1px solid rgba(111, 128, 111, 0.26);
+}
+
+.lead-success__mark::before {
+	content: '';
+	width: 28px;
+	height: 15px;
+	margin-top: -4px;
+	border-left: 4px solid var(--sage);
+	border-bottom: 4px solid var(--sage);
+	transform: rotate(-45deg);
+}
+
+.lead-success .eyebrow {
+	margin: 2px 0 0;
+}
+
+.lead-success h2 {
+	margin: 0;
+	font-family: 'Cormorant Garamond', serif;
+	font-size: clamp(2.4rem, 8vw, 3.35rem);
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: 0;
+}
+
+.lead-success p:not(.eyebrow) {
+	max-width: 390px;
+	margin: 0;
+	color: var(--text-soft);
+	line-height: 1.65;
+}
+
+.lead-success .button {
+	margin-top: 6px;
 }
 
 .project-detail {
